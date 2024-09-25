@@ -1,6 +1,7 @@
 import 'package:english_words/english_words.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:nfc_manager/nfc_manager.dart';
 
 void main() {
   runApp(MyApp());
@@ -35,6 +36,8 @@ class MyAppState extends ChangeNotifier {
   }
 
   var favorites = <WordPair>[];
+  var  nfcCommands = <Object>[];
+
 
   void toggleFavorite(){
     if(favorites.contains(current)){
@@ -62,9 +65,11 @@ class _MyHomePageState extends State<MyHomePage> {
     Widget page;
     switch(selectedIndex){
       case 0:
-        page = GeneratorPage();
+        page = ReadNFC();
       case 1:
-        page = FavoritesPage();
+        page = WriteNFC();
+      case 2:
+        page = CodeNFC();
       default:
         throw UnimplementedError('No widget for $selectedIndex');
     }
@@ -79,12 +84,16 @@ class _MyHomePageState extends State<MyHomePage> {
                   extended: constraints.maxWidth >= 600,
                   destinations: [
                     NavigationRailDestination(
-                      icon: Icon(Icons.home),
-                      label: Text('Home'),
+                      icon: Icon(Icons.barcode_reader),
+                      label: Text('Read from Tag'),
                     ),
                     NavigationRailDestination(
-                      icon: Icon(Icons.favorite),
-                      label: Text('Favorites'),
+                      icon: Icon(Icons.wysiwyg),
+                      label: Text('Write to Tag'),
+                    ),
+                    NavigationRailDestination(
+                      icon: Icon(Icons.code),
+                      label: Text('Commands'),
                     ),
                   ],
                   selectedIndex: selectedIndex,
@@ -105,6 +114,117 @@ class _MyHomePageState extends State<MyHomePage> {
           ),
         );
       }
+    );
+  }
+}
+
+class ReadNFC extends StatelessWidget{
+  @override
+  Widget build(BuildContext context) {
+    var appState = context.watch<MyAppState>();
+
+    var readFromNfcTag = "";
+
+    void readNfcTag() {
+      NfcManager.instance.startSession(onDiscovered: (NfcTag badge) async {
+        var ndef = Ndef.from(badge);
+
+        if (ndef != null && ndef.cachedMessage != null) {
+          String tempRecord = "";
+          for (var record in ndef.cachedMessage!.records) {
+            tempRecord =
+            "$tempRecord ${String.fromCharCodes(record.payload.sublist(record.payload[0] + 1))}";
+          }
+
+            readFromNfcTag = tempRecord;
+
+        }
+        if (ndef != null) {
+          var chipId = ndef.additionalData['identifier']
+              .map((e) => e.toRadixString(16).padLeft(2, '0'))
+              .join(':');
+        }
+
+        NfcManager.instance.stopSession();
+      });
+    }
+
+    if(appState.nfcCommands.isEmpty){
+      return Center(
+        child: Text('Scan a NFC tag!'),
+      );
+    }
+
+    return FutureBuilder(
+        future: NfcManager.instance.isAvailable(),
+        builder: (context,snapshot) {
+          if(snapshot.data!){
+            return const Center(
+                child: Text('NFC not available')
+            );
+          }else{
+            return Center(
+              child: TextField(
+                decoration: InputDecoration(
+                    enabled: false,
+                    border: const OutlineInputBorder(),
+                    hintText: readFromNfcTag,
+                    hintMaxLines: 10),
+              )
+            );
+      }}
+    );
+  }
+}
+
+class WriteNFC extends StatelessWidget{
+  @override
+  Widget build(BuildContext context) {
+    var appState = context.watch<MyAppState>();
+
+    if(appState.nfcCommands.isEmpty){
+      return Center(
+        child: Text('Write to a NFC tag!'),
+      );
+    }
+
+    return ListView(
+      children: [
+        Padding(
+            padding: const EdgeInsets.all(20),
+            child: Text('NFC Tag ID: ${appState.nfcCommands}')
+        ),
+        Padding(
+            padding: const EdgeInsets.all(20),
+            child: Text('NFC Tag Data: ${appState.nfcCommands}')
+        )
+      ],
+    );
+  }
+}
+
+class CodeNFC extends StatelessWidget{
+  @override
+  Widget build(BuildContext context) {
+    var appState = context.watch<MyAppState>();
+
+    if(appState.nfcCommands.isEmpty){
+      return Center(
+        child: Text('Execute Commands on Tags!'),
+      );
+    }
+
+    return ListView(
+      children: [
+        Padding(
+            padding: const EdgeInsets.all(20),
+            child: Text('NFC Tag ID: ${appState.nfcCommands}')
+        ),
+        Padding(
+            padding: const EdgeInsets.all(20),
+            child: Text('NFC Tag Data: ${appState.nfcCommands}')
+        )
+      ],
     );
   }
 }
