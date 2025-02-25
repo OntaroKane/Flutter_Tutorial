@@ -1,0 +1,1 @@
+D:\AndroidStudioProjects\Flutter_NFC\Flutter_Tutorial\build\app\intermediates\cxx\Debug\505a2a4p\obj\armeabi-v7a

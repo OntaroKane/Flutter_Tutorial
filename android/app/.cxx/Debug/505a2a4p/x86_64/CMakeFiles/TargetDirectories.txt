@@ -1,0 +1,2 @@
+D:/AndroidStudioProjects/Flutter_NFC/Flutter_Tutorial/android/app/.cxx/Debug/505a2a4p/x86_64/CMakeFiles/edit_cache.dir
+D:/AndroidStudioProjects/Flutter_NFC/Flutter_Tutorial/android/app/.cxx/Debug/505a2a4p/x86_64/CMakeFiles/rebuild_cache.dir
